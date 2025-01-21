@@ -1,0 +1,23 @@
+{
+"type": "FeatureCollection",
+"name": "PUENTES",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "NOMBRE": "Puente entre V. La Manguita y V. Tinitacita (Peatonal)", "X": 894373.7918, "Y": 1274838.004, "COD_EP": 35 }, "geometry": { "type": "Point", "coordinates": [ -75.033564000102984, 7.080506995731207 ] } },
+{ "type": "Feature", "properties": { "NOMBRE": "Puente sobre la quebrada Santa Bárbara", "X": 893220.9546000001, "Y": 1259341.521, "COD_EP": 36 }, "geometry": { "type": "Point", "coordinates": [ -75.043708999353285, 6.940380999479647 ] } },
+{ "type": "Feature", "properties": { "NOMBRE": "Puente Caracolí", "X": 883209.2835, "Y": 1252537.624, "COD_EP": 37 }, "geometry": { "type": "Point", "coordinates": [ -75.134153999350985, 6.878674997772141 ] } },
+{ "type": "Feature", "properties": { "NOMBRE": "Puente La Frijolera", "X": 884724.1665000001, "Y": 1243258.343, "COD_EP": 38 }, "geometry": { "type": "Point", "coordinates": [ -75.12026799945798, 6.794812001585342 ] } },
+{ "type": "Feature", "properties": { "NOMBRE": "Puente El Coco", "X": 883968.5729, "Y": 1243352.333, "COD_EP": 39 }, "geometry": { "type": "Point", "coordinates": [ -75.127104000210764, 6.795646996288853 ] } },
+{ "type": "Feature", "properties": { "NOMBRE": "Puente La Picardía", "X": 883520.4767, "Y": 1243508.823, "COD_EP": 40 }, "geometry": { "type": "Point", "coordinates": [ -75.131159999606851, 6.797053004294791 ] } },
+{ "type": "Feature", "properties": { "NOMBRE": "Puente El Caimán", "X": 882981.8303, "Y": 1243916.706, "COD_EP": 41 }, "geometry": { "type": "Point", "coordinates": [ -75.136040000268039, 6.800729996222678 ] } },
+{ "type": "Feature", "properties": { "NOMBRE": "Puente El Grano", "X": 882816.4995, "Y": 1244351.098, "COD_EP": 42 }, "geometry": { "type": "Point", "coordinates": [ -75.137543999662128, 6.804654002219517 ] } },
+{ "type": "Feature", "properties": { "NOMBRE": "Puente Vehicular Río Monos", "X": 909217.5621, "Y": 1254408.273, "COD_EP": 43 }, "geometry": { "type": "Point", "coordinates": [ -74.898896000175682, 6.896049991906306 ] } },
+{ "type": "Feature", "properties": { "NOMBRE": "Puente Quebrada El Tapón", "X": 901178.0568, "Y": 1249965.39, "COD_EP": 44 }, "geometry": { "type": "Point", "coordinates": [ -74.971555555162013, 6.855749954226825 ] } },
+{ "type": "Feature", "properties": { "NOMBRE": "Puente Piedra", "X": 912203.698, "Y": 1260818.6096399999, "COD_EP": 45 }, "geometry": { "type": "Point", "coordinates": [ -74.871976582520219, 6.954054761245061 ] } },
+{ "type": "Feature", "properties": { "NOMBRE": "Puente sobre el Río Pocoró (Vehicular)", "X": 902142.622, "Y": 1253265.61255, "COD_EP": 46 }, "geometry": { "type": "Point", "coordinates": [ -74.962884986632233, 6.885604450764018 ] } },
+{ "type": "Feature", "properties": { "NOMBRE": "Puente vehicular Río Mata", "X": 915913.772, "Y": 1264706.36, "COD_EP": 47 }, "geometry": { "type": "Point", "coordinates": [ -74.838462899173834, 6.989261196810546 ] } },
+{ "type": "Feature", "properties": { "NOMBRE": "Puente El Pital", "X": 891676.551, "Y": 1269514.899, "COD_EP": 48 }, "geometry": { "type": "Point", "coordinates": [ -75.057873895881414, 7.032330044552921 ] } },
+{ "type": "Feature", "properties": { "NOMBRE": "Puente El Chispero", "X": 898920.637, "Y": 1286179.372, "COD_EP": 49 }, "geometry": { "type": "Point", "coordinates": [ -74.992616282806054, 7.183128569726964 ] } },
+{ "type": "Feature", "properties": { "NOMBRE": "Puente Los Ranchitos,  sobre Río Riachón (Peatonal)", "X": 893298.405, "Y": 1259174.817, "COD_EP": 50 }, "geometry": { "type": "Point", "coordinates": [ -75.043005178314672, 6.938875242311739 ] } }
+]
+}

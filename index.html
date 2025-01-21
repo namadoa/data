@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mapa de consulta - Amalfi</title>
+
+  <!-- CSS de Leaflet -->
+  <link rel="stylesheet" href="leaflet/leaflet.css" />
+  <!-- CSS de grouped layer control -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-groupedlayercontrol/0.6.1/leaflet.groupedlayercontrol.min.css" />
+  <!-- CSS de Leaflet Search -->
+  <link rel="stylesheet" href="plugins/leaflet-search.min.css" />
+
+  <!-- Estilos Personalizados -->
+  <style>
+    /* Mapa a ancho completo y 800px de alto */
+    #map {
+      width: 100%;
+      height: 800px;
+    }
+    .boton-capas {
+      background: #fff;
+      padding: 6px;
+      cursor: pointer;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+    }
+    .selected-layer {
+      /* Clase para resaltar el polígono/línea en el SVG (opcional) */
+      stroke: red !important;
+      stroke-width: 3 !important;
+      fill-opacity: 0.3 !important;
+    }
+
+    /* Encabezado con imagen (escudo) a la izquierda y título a la derecha */
+    .encabezado {
+      display: flex; 
+      align-items: center;
+      justify-content: center; /* Centra el conjunto */
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+    .encabezado img {
+      width: 200px; /* Ajusta el ancho según prefieras */
+      margin-right: 15px; /* Espacio entre la imagen y el título */
+    }
+
+    /* Estilos para la leyenda */
+    .info.legend {
+      background: white;
+      padding: 6px 10px;
+      line-height: 1.4em;
+      border: 2px solid #ccc;
+      border-radius: 4px;
+      font: 14px/1.4 "Helvetica Neue", Arial, Helvetica, sans-serif;
+      max-width: 300px;
+    }
+    .legend-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 3px;
+    }
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      margin-right: 5px;
+      border: 1px solid #999;
+    }
+  </style>
+</head>
+<body>
+  <!-- Encabezado con imagen a la izquierda y título -->
+  <div class="encabezado">
+    <img src="images/escudo.png" alt="Escudo">
+    <h1 style="color: #404040; font-family: Arial, sans-serif;">Mapa de consulta de Suelos, Amenazas y Riesgos - Amalfi - Antioquia</h1>
+  </div>
+
+  <div id="map"></div>
+
+  <!-- Scripts -->
+  <script src="leaflet/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-groupedlayercontrol/0.6.1/leaflet.groupedlayercontrol.min.js"></script>
+  <script src="plugins/leaflet-search.min.js"></script>
+
+  <script>
+    /***********************************************
+     * 1) INICIALIZACIÓN DEL MAPA
+     ***********************************************/
+    var map = L.map('map').setView([7.006441828913923, -74.96078645595889], 11);
+
+   // Definir la capa satelital
+var Stadia_AlidadeSatellite = L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.{ext}', {
+  minZoom: 0,
+  maxZoom: 20,
+  attribution: '&copy; CNES, Distribution Airbus DS, © Airbus DS, © PlanetObserver (Contains Copernicus Data) | &copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  ext: 'jpg'
+});
+
+// Ahora tu objeto baseLayers con ambas opciones
+var baseLayers = {
+  "OpenStreetMap": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map),
+
+  "Satélite (Stadia)": Stadia_AlidadeSatellite
+};
+
+
+    // Definir los grupos de capas y rutas
+    var grupos = {
+      "DELIMITACIÓN": {
+        "Predio Rural": "datos/PREDIO_RURAL.geojson",
+        "División Veredal": "datos/DIVISION_VEREDAL.geojson",
+        "Límites Municipios": "datos/LIMITE_MUNICIPIOS.geojson"
+      },
+      "SUELOS": {
+        "Clases Agrícolas": "datos/CLASES_AGRICOLAS.geojson",                // campo Nombre
+        "Uso Potencial del Suelo": "datos/USO_POTENCIAL_DEL_SUELO.geojson",  // campo Nombre
+        "Coberturas de Tierra": "datos/COBERTURAS_TIERRA.geojson",           // campo USOS
+        "Uso Actual del Suelo": "datos/USO_ACTUAL_DEL_SUELO.geojson",        // campo USOS
+        "Uso Recomendado del Suelo": "datos/USO_RECOMENDADO_SUELO.geojson"   // campo Nombre
+      },
+      "AMENAZAS Y RIESGOS": {
+        "Amenaza Inundación": "datos/AMENAZA_INUNDACION.geojson",      // campo categoriza
+        "Amenaza Movimiento en Masa": "datos/AMENAZA_MOVIMIENTO_EN_MASA.geojson"  // campo categorias
+      },
+      "CARTOGRAFÍA": {
+        "Vías": "datos/VIAS.geojson",
+        "Drenaje Sencillo": "datos/DRENAJE_SENCILLO.geojson",
+        "Puentes": "datos/PUENTES.geojson",
+        "Embalse": "datos/EMBALSE.geojson",
+        "Curvas de Nivel": "datos/CURVAS_NIVEL.geojson"
+      }
+    };
+
+    // Estructura para guardar las capas
+    var groupedOverlays = {
+      "DELIMITACIÓN": {},
+      "SUELOS": {},
+      "AMENAZAS Y RIESGOS": {},
+      "CARTOGRAFÍA": {}
+    };
+
+    // Variables globales para selección y búsqueda
+    var capaSeleccionada = null;
+    var currentCircle = null;
+
+    // Quita el resaltado actual
+    function resetHighlight() {
+      if (capaSeleccionada) {
+        var path = capaSeleccionada.getElement();
+        if (path) {
+          path.classList.remove('selected-layer');
+        }
+        capaSeleccionada.setStyle({
+          color: capaSeleccionada.options.originalColor,
+          weight: capaSeleccionada.options.originalWeight,
+          fillOpacity: capaSeleccionada.options.originalFillOpacity
+        });
+        capaSeleccionada = null;
+      }
+      if (currentCircle) {
+        map.removeLayer(currentCircle);
+        currentCircle = null;
+      }
+    }
+
+    // Construye popup (tabla con atributos)
+    function crearPopup(feature, nombre) {
+      var props = feature.properties;
+      var tabla = '<table style="border-collapse: collapse;">';
+      for (var key in props) {
+        tabla += `<tr>
+                    <th style="border: 1px solid #ccc; padding: 2px;">${key}</th>
+                    <td style="border: 1px solid #ccc; padding: 2px;">${props[key]}</td>
+                  </tr>`;
+      }
+      tabla += '</table>';
+      return `<strong>${nombre}</strong><br>${tabla}`;
+    }
+
+    /***********************************************
+     * 2) CREACIÓN DE CAPAS (CON ESTILOS Y EVENTOS)
+     ***********************************************/
+    function cargarCapas() {
+      var promises = [];
+
+      for (let grupo in grupos) {
+        for (let nombre in grupos[grupo]) {
+          let url = grupos[grupo][nombre];
+
+          let promise = fetch(url)
+            .then(response => {
+              if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+              }
+              return response.json();
+            })
+            .then(data => {
+              var capa;
+
+              // Clase CSS a partir del nombre (para el switch)
+              var className = `capa-${nombre.toLowerCase().replace(/\s+/g, '-').replace(/[áéíóú]/g, '')}`;
+
+              // Función estilo
+              function estilo(feature) {
+
+                // Funciones auxiliares para asignar color:
+                function colorClasesAgricolas(value) {
+                  switch (value) {
+                    case "Agrosilvopastoril": return "green";
+                    case "Conservación":      return "pink";
+                    case "Cultivos densos":   return "purple";
+                    case "Industrial":        return "lightblue";
+                    case "Plantaciones protectoras-Vida silvestre": return "yellow";
+                    case "Residencial":       return "#A52A2A";  // marrón rojizo
+                    case "Silvopastoril":     return "#654321";  // marrón oscuro
+                    default:                  return "#999999"; 
+                  }
+                }
+
+                function colorUsoRecomendado(value) {
+                  switch (value) {
+                    case "Agrosilvopastoril":        return "#02a88d";
+                    case "Embalse":                  return "purple";
+                    case "Forestal productor":       return "brown";
+                    case "Forestal protector":       return "#006400"; // verde oscuro
+                    case "Silvoagrícola":            return "lime";    // verde fosfo
+                    case "Silvopastoril":            return "pink";    // rosado
+                    case "Suelo de conservación":     return "fuchsia";
+                    case "Zona Urbana":               return "yellow";
+                    default:                          return "#999999";
+                  }
+                }
+
+                function colorUsoActual(value) {
+                  switch (value) {
+                    case "Agricultura":                                          return "pink";
+                    case "Agricultura, pastoreo":                                return "lightgreen";
+                    case "Agrícola":                                             return "lightblue";
+                    case "Ganadería":                                            return "brown";
+                    case "Ganadería, protección":                                return "darkgreen";
+                    case "Ganadería, recuperación":                              return "#008080"; // verde azulado
+                    case "Minería":                                              return "orange";
+                    case "Pesca, generación de energía":                         return "blue";
+                    case "Protección":                                           return "red";
+                    case "Protección, aprovechamiento selectivo":                return "burlywood"; 
+                    case "Protección, conservación (aprovechamiento selectivo)": return "#8B4513"; // marrón rojizo
+                    case "Protección-Conservación":                              return "#8B008B"; // fucsia oscuro
+                    case "Recuperación":                                         return "turquoise";
+                    case "Vivienda":                                             return "#008B8B"; // cian oscuro
+                    default:                                                     return "#999999";
+                  }
+                }
+
+                function colorCoberturas(value) {
+                  switch (value) {
+                    case "Agricultura":                                          return "pink";
+                    case "Agricultura, pastoreo":                                return "lightgreen";
+                    case "Agrícola":                                             return "lightblue";
+                    case "Ganadería":                                            return "brown";
+                    case "Ganadería, protección":                                return "yellow";
+                    case "Ganadería, recuperación":                              return "#00008B"; // azul oscuro
+                    case "Minería":                                              return "orange";
+                    case "Pesca, generación de energía":                         return "blue";
+                    case "Protección":                                           return "red";
+                    case "Protección, aprovechamiento selectivo":                return "burlywood"; 
+                    case "Protección, conservación (aprovechamiento selectivo)": return "#8B4513"; // marrón rojizo
+                    case "Protección-Conservación":                              return "#8B008B"; // fucsia oscuro
+                    case "Recuperación":                                         return "turquoise";
+                    case "Vivienda":                                             return "#008B8B"; // cian oscuro
+                    default:                                                     return "#999999";
+                  }
+                }
+
+                function colorUsoPotencial(value) {
+                  switch (value) {
+                    case "Agrosilvopastoril":           return "blue";
+                    case "Conservación":                return "yellow";
+                    case "Cultivos densos":             return "brown";
+                    case "Industrial":                  return "cyan";
+                    case "Plantaciones protectoras-Vida silvestre": return "magenta";
+                    case "Residencial":                 return "pink";
+                    case "Silvopastoril":               return "green";
+                    default:                             return "#999999";
+                  }
+                }
+
+                // Amenazas preexistentes
+                function colorAmenazaInundacion(value) {
+                  let cat = value.toUpperCase();
+                  if      (cat === "DRENAJE")      return "blue";
+                  else if (cat === "NO PRESENTA")  return "green";
+                  else if (cat === "BAJA")         return "yellow";
+                  else if (cat === "MODERADA")     return "orange";
+                  else if (cat === "ALTA")         return "red";
+                  return "#999999";
+                }
+                function colorAmenazaMovimiento(value) {
+                  let cat = value.toUpperCase();
+                  if      (cat === "DRENAJES") return "blue";
+                  else if (cat === "BAJA")     return "yellow";
+                  else if (cat === "MODERADA") return "orange";
+                  else if (cat === "ALTA")     return "red";
+                  return "#999999";
+                }
+
+                // --- SWITCH PRINCIPAL POR className ---
+                switch (className) {
+                  /* ============= DELIMITACIÓN ============ */
+                  case "capa-predio-rural":
+                    return { color: "#ffa500", weight: 1.5, fillColor: "#ffffff", fillOpacity: 0.5 };
+                  case "capa-division-veredal":
+                    return { color: "#008000", weight: 2, fillOpacity: 0.5 };
+                  case "capa-limites-municipios":
+                    return { color: "#008000", weight: 2, fillOpacity: 0.5 };
+
+                  /* ============= SUELOS ============ */
+                  // 1) CLASES AGRÍCOLAS (campo Nombre)
+                  case "capa-clases-agrcolas": {
+                    let nom = feature.properties.Nombre || "";
+                    return { color: colorClasesAgricolas(nom), weight: 1.5, fillOpacity: 0.5 };
+                  }
+
+                  // 2) USO POTENCIAL DEL SUELO (campo Nombre)
+                  case "capa-uso-potencial-del-suelo": {
+                    let nom = feature.properties.Nombre || "";
+                    return { color: colorUsoPotencial(nom), weight: 1.5, fillOpacity: 0.5 };
+                  }
+
+                  // 3) COBERTURAS DE TIERRA (campo USOS)
+                  case "capa-coberturas-de-tierra": {
+                    let usos = feature.properties.USOS || "";
+                    return { color: colorCoberturas(usos), weight: 1.5, fillOpacity: 0.5 };
+                  }
+
+                  // 4) USO ACTUAL DEL SUELO (campo USOS)
+                  case "capa-uso-actual-del-suelo": {
+                    let usos = feature.properties.USOS || "";
+                    return { color: colorUsoActual(usos), weight: 1.5, fillOpacity: 0.5 };
+                  }
+
+                  // 5) USO RECOMENDADO DEL SUELO (campo Nombre)
+                  case "capa-uso-recomendado-del-suelo": {
+                    let nom = feature.properties.Nombre || "";
+                    return { color: colorUsoRecomendado(nom), weight: 1.5, fillOpacity: 0.5 };
+                  }
+
+                  /* ============= AMENAZAS ============ */
+                  // Amenaza Inundación
+                  case "capa-amenaza-inundacin": {
+                    let cat = feature.properties.categoriza || "";
+                    return { color: colorAmenazaInundacion(cat), weight: 1.5, fillOpacity: 0.5 };
+                  }
+                  // Amenaza Movimiento en Masa
+                  case "capa-amenaza-movimiento-en-masa": {
+                    let cat = feature.properties.categorias || "";
+                    return { color: colorAmenazaMovimiento(cat), weight: 1.5, fillOpacity: 0.5 };
+                  }
+
+                  /* ============= CARTOGRAFÍA ============ */
+                  case "capa-vas":
+                    return { color: "#696969", weight: 2, fillOpacity: 0.5 };
+                  case "capa-drenaje-sencillo":
+                    return { color: "#1e90ff", weight: 1, fillOpacity: 0.5 };
+                  case "capa-puentes":
+                    return { color: "#ff69b4", weight: 2, fillOpacity: 0.5 };
+                  case "capa-embalse":
+                    return { color: "#4682b4", weight: 1.5, fillOpacity: 0.5 };
+                  case "capa-curvas-de-nivel":
+                    return { color: "#808080", weight: 1, fillOpacity: 0.5 };
+
+                  default:
+                    return { color: "#0000FF", weight: 1, fillOpacity: 0.5 };
+                }
+              }
+
+              // Crear la capa GeoJSON
+              capa = L.geoJSON(data, {
+                className: className,
+                style: estilo,
+                onEachFeature: (feature, layer) => {
+                  // Popup
+                  var popupContent = crearPopup(feature, nombre);
+                  layer.bindPopup(popupContent);
+
+                  // Tooltip / Etiqueta (aprox)
+                  var etiqueta = "Sin etiqueta";
+                  switch (nombre) {
+                    /* SUELOS */
+                    case "Clases Agrícolas":
+                      etiqueta = feature.properties.Nombre || "Sin etiqueta";
+                      break;
+                    case "Uso Potencial del Suelo":
+                      etiqueta = feature.properties.Nombre || "Sin etiqueta";
+                      break;
+                    case "Coberturas de Tierra":
+                      etiqueta = feature.properties.USOS || "Sin etiqueta";
+                      break;
+                    case "Uso Actual del Suelo":
+                      etiqueta = feature.properties.USOS || "Sin etiqueta";
+                      break;
+                    case "Uso Recomendado del Suelo":
+                      etiqueta = feature.properties.Nombre || "Sin etiqueta";
+                      break;
+
+                    /* AMENAZAS */
+                    case "Amenaza Inundación":
+                      etiqueta = feature.properties.categoriza || "Sin etiqueta";
+                      break;
+                    case "Amenaza Movimiento en Masa":
+                      etiqueta = feature.properties.categorias || "Sin etiqueta"; // sin tilde
+                      break;
+
+                    /* CARTOGRAFÍA */
+                    case "Vías":
+                      etiqueta = feature.properties.NOMBRE || "Sin etiqueta";
+                      break;
+                    case "Drenaje Sencillo":
+                      etiqueta = feature.properties.NMG || "Sin etiqueta";
+                      break;
+                    case "Puentes":
+                      etiqueta = feature.properties.NOMBRE || "Sin etiqueta";
+                      break;
+                    case "Embalse":
+                      etiqueta = feature.properties.NOMBRE || "Sin etiqueta";
+                      break;
+                    case "Curvas de Nivel":
+                      etiqueta = feature.properties.TALT || "Sin etiqueta";
+                      break;
+
+                    /* DELIMITACIÓN */
+                    case "División Veredal":
+                      etiqueta = feature.properties.NOM_VEREDA || "Sin etiqueta";
+                      break;
+                    case "Límites Municipios":
+                      etiqueta = feature.properties.NOMBRE || "Sin etiqueta";
+                      break;
+                    case "Predio Rural":
+                      etiqueta = feature.properties.PREDIOS || "Sin etiqueta";
+                      break;
+
+                    default:
+                      etiqueta = "Sin etiqueta";
+                  }
+
+                  layer.bindTooltip(etiqueta, {
+                    direction: "top",
+                    className: "no-border-label",
+                    sticky: false
+                  });
+
+                  // Guardar estilos originales
+                  layer.options.originalColor = layer.options.color;
+                  layer.options.originalWeight = layer.options.weight;
+                  layer.options.originalFillOpacity = layer.options.fillOpacity;
+
+                  // Evento clic => resaltar en rojo
+                  layer.on('click', function () {
+                    resetHighlight();
+                    this.setStyle({
+                      color: "red",
+                      weight: 3,
+                      fillOpacity: 0.3
+                    });
+                    capaSeleccionada = this;
+                    var path = this.getElement();
+                    if (path) {
+                      path.classList.add('selected-layer');
+                    }
+                    this.openPopup();
+                  });
+                }
+              });
+
+              // Agregar la capa al overlay correspondiente
+              groupedOverlays[grupo][nombre] = capa;
+            })
+            .catch(error => {
+              console.error(`Error cargando la capa ${nombre}: `, error);
+            });
+
+          promises.push(promise);
+        }
+      }
+
+      // Esperamos que todas las capas terminen de cargarse
+      Promise.all(promises).then(() => {
+        // 3) Creamos el control de capas con groupedOverlays
+        var controlCapas = L.control.groupedLayers(baseLayers, groupedOverlays, {
+          collapsed: false,
+          sortGroups: false
+        }).addTo(map);
+
+        // Botón para ocultar/mostrar el listado de capas
+        var botonCapas = L.DomUtil.create('div', 'boton-capas', document.body);
+        botonCapas.innerHTML = "Ocultar Capas";
+        botonCapas.onclick = function () {
+          var controlContainer = controlCapas.getContainer();
+          if (controlContainer.style.display === 'none') {
+            controlContainer.style.display = 'block';
+            botonCapas.innerHTML = "Ocultar Capas";
+          } else {
+            controlContainer.style.display = 'none';
+            botonCapas.innerHTML = "Mostrar Capas";
+          }
+        };
+
+        // Control Zoom/Coordenadas
+        var zoomCoordControl = L.Control.extend({
+          options: { position: 'bottomleft' },
+          onAdd: function (map) {
+            var container = L.DomUtil.create('div', 'leaflet-control-custom');
+            container.innerHTML = `Zoom: ${map.getZoom()} | Coord: 0, 0`;
+
+            map.on('zoomend', function () {
+              container.innerHTML = `Zoom: ${map.getZoom()} | Coord: ${map.getCenter().lat.toFixed(6)}, ${map.getCenter().lng.toFixed(6)}`;
+            });
+            map.on('mousemove', function (e) {
+              container.innerHTML = `Zoom: ${map.getZoom()} | Coord: ${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}`;
+            });
+
+            return container;
+          }
+        });
+        map.addControl(new zoomCoordControl());
+
+        // Control de búsqueda para "Predio Rural" (ejemplo)
+        var predioRuralLayer = groupedOverlays["DELIMITACIÓN"]["Predio Rural"];
+        if (predioRuralLayer) {
+          var searchControl = new L.Control.Search({
+            layer: predioRuralLayer,
+            propertyName: 'PK_PREDIOS',
+            initial: false,
+            zoom: 16,
+            marker: false,
+            moveToLocation: function(latlng, title, map) {
+              map.setView(latlng, 16);
+            }
+          });
+          map.addControl(searchControl);
+
+          // Evento al encontrar un predio
+          searchControl.on('search:locationfound', function(e) {
+            if (currentCircle) {
+              map.removeLayer(currentCircle);
+            }
+            currentCircle = L.circle(e.latlng, {
+              color: 'red',
+              fillColor: '#f03',
+              fillOpacity: 0.2,
+              radius: 100
+            }).addTo(map);
+
+            if (e.layer) {
+              resetHighlight();
+              e.layer.setStyle({
+                color: "red",
+                weight: 3,
+                fillOpacity: 0.3
+              });
+              capaSeleccionada = e.layer;
+
+              var path = e.layer.getElement();
+              if (path) {
+                path.classList.add('selected-layer');
+              }
+            }
+          });
+        }
+
+        // ---------------------------
+        // 4) LEYENDA DINÁMICA
+        // ---------------------------
+        var legendControl = L.control({ position: 'bottomright' });
+        legendControl.onAdd = function(map) {
+          var div = L.DomUtil.create('div', 'info legend');
+          div.innerHTML = ""; // Se llenará dinámicamente
+          return div;
+        };
+        legendControl.addTo(map);
+
+        // Función para actualizar la leyenda
+        function updateLegend() {
+          var div = document.querySelector('.info.legend');
+          if (!div) return;
+
+          // --- Obtener referencias a las capas ---
+          let inundacion      = groupedOverlays["AMENAZAS Y RIESGOS"]["Amenaza Inundación"];
+          let movMasa         = groupedOverlays["AMENAZAS Y RIESGOS"]["Amenaza Movimiento en Masa"];
+
+          let clasesAgric     = groupedOverlays["SUELOS"]["Clases Agrícolas"];
+          let usoPotencial    = groupedOverlays["SUELOS"]["Uso Potencial del Suelo"];
+          let coberturasT     = groupedOverlays["SUELOS"]["Coberturas de Tierra"];
+          let usoActualSuelo  = groupedOverlays["SUELOS"]["Uso Actual del Suelo"];
+          let usoRecomendado  = groupedOverlays["SUELOS"]["Uso Recomendado del Suelo"];
+
+          // --- Revisar cuáles están activos ---
+          let showInundacion     = (inundacion     && map.hasLayer(inundacion));
+          let showMovimientoMasa = (movMasa        && map.hasLayer(movMasa));
+          let showClasesAgric    = (clasesAgric    && map.hasLayer(clasesAgric));
+          let showUsoPotencial   = (usoPotencial   && map.hasLayer(usoPotencial));
+          let showCoberturas     = (coberturasT    && map.hasLayer(coberturasT));
+          let showUsoActual      = (usoActualSuelo && map.hasLayer(usoActualSuelo));
+          let showUsoRecomendado = (usoRecomendado && map.hasLayer(usoRecomendado));
+
+          // Si nada está activo, vaciamos la leyenda
+          if (
+            !showInundacion && !showMovimientoMasa &&
+            !showClasesAgric && !showUsoPotencial && !showCoberturas &&
+            !showUsoActual && !showUsoRecomendado
+          ) {
+            div.innerHTML = "";
+            return;
+          }
+
+          // Comenzamos a construir el HTML de la leyenda
+          var html = '<div class="legend-title">Leyenda</div>';
+
+          // Leyenda Amenaza Inundación
+          if (showInundacion) {
+            html += `
+              <div><strong>Amenaza Inundación</strong></div>
+              <div class="legend-item"><div class="legend-color" style="background:blue"></div>DRENAJE</div>
+              <div class="legend-item"><div class="legend-color" style="background:green"></div>NO PRESENTA</div>
+              <div class="legend-item"><div class="legend-color" style="background:yellow"></div>BAJA</div>
+              <div class="legend-item"><div class="legend-color" style="background:orange"></div>MODERADA</div>
+              <div class="legend-item"><div class="legend-color" style="background:red"></div>ALTA</div>
+              <hr/>
+            `;
+          }
+
+          // Leyenda Amenaza Movimiento en Masa
+          if (showMovimientoMasa) {
+            html += `
+              <div><strong>Amenaza Movimiento en Masa</strong></div>
+              <div class="legend-item"><div class="legend-color" style="background:blue"></div>DRENAJES</div>
+              <div class="legend-item"><div class="legend-color" style="background:yellow"></div>BAJA</div>
+              <div class="legend-item"><div class="legend-color" style="background:orange"></div>MODERADA</div>
+              <div class="legend-item"><div class="legend-color" style="background:red"></div>ALTA</div>
+              <hr/>
+            `;
+          }
+
+          // Leyenda Clases Agrícolas (campo Nombre)
+          if (showClasesAgric) {
+            html += `
+              <div><strong>Clases Agrícolas</strong> (campo Nombre)</div>
+              <div class="legend-item"><div class="legend-color" style="background:green"></div>Agrosilvopastoril</div>
+              <div class="legend-item"><div class="legend-color" style="background:pink"></div>Conservación</div>
+              <div class="legend-item"><div class="legend-color" style="background:purple"></div>Cultivos densos</div>
+              <div class="legend-item"><div class="legend-color" style="background:lightblue"></div>Industrial</div>
+              <div class="legend-item"><div class="legend-color" style="background:yellow"></div>Plantaciones protectoras-Vida silvestre</div>
+              <div class="legend-item"><div class="legend-color" style="background:#A52A2A"></div>Residencial</div>
+              <div class="legend-item"><div class="legend-color" style="background:#654321"></div>Silvopastoril</div>
+              <hr/>
+            `;
+          }
+
+          // Leyenda Uso Recomendado del Suelo (campo Nombre)
+          if (showUsoRecomendado) {
+            html += `
+              <div><strong>Uso Recomendado del Suelo</strong> (campo Nombre)</div>
+              <div class="legend-item"><div class="legend-color" style="background:#02a88d"></div>Agrosilvopastoril</div>
+              <div class="legend-item"><div class="legend-color" style="background:purple"></div>Embalse</div>
+              <div class="legend-item"><div class="legend-color" style="background:brown"></div>Forestal productor</div>
+              <div class="legend-item"><div class="legend-color" style="background:#006400"></div>Forestal protector</div>
+              <div class="legend-item"><div class="legend-color" style="background:lime"></div>Silvoagrícola</div>
+              <div class="legend-item"><div class="legend-color" style="background:pink"></div>Silvopastoril</div>
+              <div class="legend-item"><div class="legend-color" style="background:fuchsia"></div>Suelo de conservación</div>
+              <div class="legend-item"><div class="legend-color" style="background:yellow"></div>Zona Urbana</div>
+              <hr/>
+            `;
+          }
+
+          // Leyenda Uso Actual del Suelo (campo USOS)
+          if (showUsoActual) {
+            html += `
+              <div><strong>Uso Actual del Suelo</strong> (campo USOS)</div>
+              <div class="legend-item"><div class="legend-color" style="background:pink"></div>Agricultura</div>
+              <div class="legend-item"><div class="legend-color" style="background:lightgreen"></div>Agricultura, pastoreo</div>
+              <div class="legend-item"><div class="legend-color" style="background:lightblue"></div>Agrícola</div>
+              <div class="legend-item"><div class="legend-color" style="background:brown"></div>Ganadería</div>
+              <div class="legend-item"><div class="legend-color" style="background:darkgreen"></div>Ganadería, protección</div>
+              <div class="legend-item"><div class="legend-color" style="background:#008080"></div>Ganadería, recuperación</div>
+              <div class="legend-item"><div class="legend-color" style="background:orange"></div>Minería</div>
+              <div class="legend-item"><div class="legend-color" style="background:blue"></div>Pesca, generación de energía</div>
+              <div class="legend-item"><div class="legend-color" style="background:red"></div>Protección</div>
+              <div class="legend-item"><div class="legend-color" style="background:burlywood"></div>Protección, aprovechamiento selectivo</div>
+              <div class="legend-item"><div class="legend-color" style="background:#8B4513"></div>Protección, conservación (aprovechamiento selectivo)</div>
+              <div class="legend-item"><div class="legend-color" style="background:#8B008B"></div>Protección-Conservación</div>
+              <div class="legend-item"><div class="legend-color" style="background:turquoise"></div>Recuperación</div>
+              <div class="legend-item"><div class="legend-color" style="background:#008B8B"></div>Vivienda</div>
+              <hr/>
+            `;
+          }
+
+          // Leyenda Coberturas de Tierra (campo USOS)
+          if (showCoberturas) {
+            html += `
+              <div><strong>Coberturas de Tierra</strong> (campo USOS)</div>
+              <div class="legend-item"><div class="legend-color" style="background:pink"></div>Agricultura</div>
+              <div class="legend-item"><div class="legend-color" style="background:lightgreen"></div>Agricultura, pastoreo</div>
+              <div class="legend-item"><div class="legend-color" style="background:lightblue"></div>Agrícola</div>
+              <div class="legend-item"><div class="legend-color" style="background:brown"></div>Ganadería</div>
+              <div class="legend-item"><div class="legend-color" style="background:yellow"></div>Ganadería, protección</div>
+              <div class="legend-item"><div class="legend-color" style="background:#00008B"></div>Ganadería, recuperación</div>
+              <div class="legend-item"><div class="legend-color" style="background:orange"></div>Minería</div>
+              <div class="legend-item"><div class="legend-color" style="background:blue"></div>Pesca, generación de energía</div>
+              <div class="legend-item"><div class="legend-color" style="background:red"></div>Protección</div>
+              <div class="legend-item"><div class="legend-color" style="background:burlywood"></div>Protección, aprovechamiento selectivo</div>
+              <div class="legend-item"><div class="legend-color" style="background:#8B4513"></div>Protección, conservación (aprovechamiento selectivo)</div>
+              <div class="legend-item"><div class="legend-color" style="background:#8B008B"></div>Protección-Conservación</div>
+              <div class="legend-item"><div class="legend-color" style="background:turquoise"></div>Recuperación</div>
+              <div class="legend-item"><div class="legend-color" style="background:#008B8B"></div>Vivienda</div>
+              <hr/>
+            `;
+          }
+
+          // Leyenda Uso Potencial del Suelo (campo Nombre)
+          if (showUsoPotencial) {
+            html += `
+              <div><strong>Uso Potencial del Suelo</strong> (campo Nombre)</div>
+              <div class="legend-item"><div class="legend-color" style="background:blue"></div>Agrosilvopastoril</div>
+              <div class="legend-item"><div class="legend-color" style="background:yellow"></div>Conservación</div>
+              <div class="legend-item"><div class="legend-color" style="background:brown"></div>Cultivos densos</div>
+              <div class="legend-item"><div class="legend-color" style="background:cyan"></div>Industrial</div>
+              <div class="legend-item"><div class="legend-color" style="background:magenta"></div>Plantaciones protectoras-Vida silvestre</div>
+              <div class="legend-item"><div class="legend-color" style="background:pink"></div>Residencial</div>
+              <div class="legend-item"><div class="legend-color" style="background:green"></div>Silvopastoril</div>
+              <hr/>
+            `;
+          }
+
+          div.innerHTML = html;
+        }
+
+        // Escuchamos overlayadd y overlayremove para actualizar la leyenda
+        map.on('overlayadd',  updateLegend);
+        map.on('overlayremove', updateLegend);
+
+      }); // fin Promise.all
+    }
+
+    // Iniciar la carga de capas
+    cargarCapas();
+  </script>
+</body>
+</html>

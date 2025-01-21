@@ -1,0 +1,142 @@
+/* ============================================================
+   ESTILOS GENERALES DEL MAPA Y CONTENEDORES
+   ============================================================ */
+
+/* Estilo para el contenedor del mapa */
+#map {
+    position: relative; /* Posicionamiento relativo para elementos hijos absolutos */
+    height: 800px;      /* Altura fija del mapa */
+    width: 100%;        /* Ancho completo del contenedor */
+    margin: 20px auto;  /* Márgenes automáticos para centrar el mapa horizontalmente */
+    border: 1px solid #ccc; /* Borde gris claro alrededor del mapa */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra sutil para darle profundidad */
+    border-radius: 5px; /* Bordes redondeados */
+}
+
+/* ============================================================
+   BOTONES Y CONTROLES PERSONALIZADOS
+   ============================================================ */
+
+/* Botón para mostrar/ocultar capas */
+.boton-capas {
+    position: absolute; /* Posicionamiento absoluto respecto al contenedor #map */
+    top: 85px;          /* Distancia desde la parte superior */
+    left: 75%;          /* Posición horizontal (ajustar según diseño) */
+    z-index: 1000;      /* Asegura que el botón esté por encima de otros elementos */
+    background-color: white; /* Fondo blanco */
+    color: black;            /* Texto negro */
+    padding: 8px 12px;       /* Espaciado interno */
+    border: 1px solid #ccc;  /* Borde gris claro */
+    border-radius: 5px;      /* Bordes redondeados */
+    cursor: pointer;         /* Cursor de puntero al pasar sobre el botón */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* Sombra para profundidad */
+    font-size: 12px;         /* Tamaño de fuente */
+    font-weight: bold;       /* Fuente en negrita */
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; /* Fuente consistente */
+    transition: background-color 0.3s ease; /* Transición suave para hover */
+}
+
+/* Cambio de color de fondo al pasar el cursor */
+.boton-capas:hover {
+    background-color: #f0f0f0;
+}
+
+/* Control personalizado para Zoom y Coordenadas */
+.leaflet-control-custom {
+    font-size: 14px;             /* Tamaño de fuente */
+    color: #000;                 /* Color del texto */
+    padding: 2px 6px;            /* Espaciado interno */
+    font-weight: bold;           /* Texto en negrita */
+    background: rgba(255, 255, 255, 0.8); /* Fondo semi-transparente */
+    border: 1px solid #ccc;      /* Borde gris claro */
+    border-radius: 4px;          /* Bordes redondeados */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3); /* Sombra para profundidad */
+}
+
+/* ============================================================
+   ESTILOS DE POPUPS Y TOOLTIPS
+   ============================================================ */
+
+/* Estilos para tablas dentro de popups */
+.leaflet-popup-content table {
+    border-collapse: collapse; /* Colapsa los bordes de las celdas */
+    width: 100%;               /* Ancho completo de la tabla */
+    font-size: 10px;           /* Tamaño de fuente pequeño */
+}
+
+/* Estilos para celdas de la tabla */
+.leaflet-popup-content th,
+.leaflet-popup-content td {
+    border: 1px solid #ccc; /* Bordes grises claros */
+    padding: 4px;            /* Espaciado interno */
+    text-align: left;        /* Alineación del texto a la izquierda */
+}
+
+/* Estilos para encabezados de la tabla */
+.leaflet-popup-content th {
+    background-color: #f2f2f2; /* Fondo gris claro */
+    font-weight: bold;         /* Texto en negrita */
+}
+
+/* Tooltip personalizado */
+.leaflet-tooltip.custom-tooltip {
+    background: white;          /* Fondo blanco */
+    border: 1px solid #999;     /* Borde gris medio */
+    border-radius: 4px;         /* Bordes redondeados */
+    font-size: 12px;            /* Tamaño de fuente */
+    color: #333;                /* Color del texto */
+    padding: 3px 8px;           /* Espaciado interno */
+}
+
+/* Tooltip sin bordes y sombras */
+.no-border-label {
+    background: transparent;    /* Fondo transparente */
+    border: none;               /* Sin borde */
+    box-shadow: none;           /* Sin sombra */
+}
+
+/* ============================================================
+   ESTILOS ADICIONALES
+   ============================================================ */
+
+/* Estilo para polígonos seleccionados (resaltado) */
+.selected-predio {
+    stroke: red !important;       /* Borde rojo al seleccionar */
+    stroke-width: 3 !important;   /* Grosor del borde al seleccionar */
+    fill-opacity: 0.3 !important; /* Opacidad del relleno al seleccionar */
+}
+
+/* Estilos para el control de búsqueda */
+.leaflet-control-search .search-input {
+    width: 200px !important; /* Ancho del campo de búsqueda */
+    font-size: 14px;         /* Tamaño de fuente */
+    padding: 6px;            /* Espaciado interno */
+    border: 1px solid #ccc;  /* Borde gris claro */
+    border-radius: 4px;      /* Bordes redondeados */
+}
+
+/* ============================================================
+   RESPONSIVE DESIGN (OPCIONAL)
+   ============================================================ */
+
+/* Ajustes para pantallas pequeñas */
+@media (max-width: 768px) {
+    #map {
+        height: 60vh; /* Reducir altura en pantallas pequeñas */
+    }
+
+    .boton-capas {
+        top: 70px;   /* Ajustar posición */
+        left: 80%;   /* Ajustar posición */
+        padding: 6px 10px; /* Reducir tamaño del botón */
+        font-size: 10px;    /* Reducir tamaño de fuente */
+    }
+
+    .leaflet-control-custom {
+        font-size: 12px; /* Reducir tamaño de fuente */
+    }
+
+    .leaflet-control-search .search-input {
+        width: 150px !important; /* Reducir ancho del campo de búsqueda */
+    }
+}
